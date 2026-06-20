@@ -32,53 +32,49 @@ class RAGBase:
         self.prompt_template = prompt_template
         self.model = model
 
-        # The search method delegates to the index:
-        def search(self, query, num_results=5):
-            boost_dict = {"question": 3.0, "section": 0.5}
-            filter_dict = {"course": self.course}
+    def search(self, query, num_results=5):
+        boost_dict = {"question": 3.0, "section": 0.5}
+        filter_dict = {"course": self.course}
 
-            return self.index.search(
-                query,
-                num_results=num_results,
-                boost_dict=boost_dict,
-                filter_dict=filter_dict
-            )
-        
-        # The build_context and build_prompt methods format the search results:
-        def build_context(self, search_results):
-            lines = []
+        return self.index.search(
+            query,
+            num_results=num_results,
+            boost_dict=boost_dict,
+            filter_dict=filter_dict
+        )
 
-            for doc in search_results:
-                lines.append(doc["section"])
-                lines.append("Q: " + doc["question"])
-                lines.append("A: " + doc["answer"])
-                lines.append("")
+    def build_context(self, search_results):
+        lines = []
 
-            return "\n".join(lines).strip()
+        for doc in search_results:
+            lines.append(doc["section"])
+            lines.append("Q: " + doc["question"])
+            lines.append("A: " + doc["answer"])
+            lines.append("")
 
-        def build_prompt(self, query, search_results):
-            context = self.build_context(search_results)
-            return self.prompt_template.format(
-                question=query, context=context
-            )
-        
-        # The llm method sends the prompt to the LLM:
-        def llm(self, prompt):
-            input_messages = [
-                {"role": "developer", "content": self.instructions},
-                {"role": "user", "content": prompt}
-            ]
+        return "\n".join(lines).strip()
 
-            response = self.llm_client.responses.create(
-                model=self.model,
-                input=input_messages
-            )
+    def build_prompt(self, query, search_results):
+        context = self.build_context(search_results)
+        return self.prompt_template.format(
+            question=query, context=context
+        )
 
-            return response.output_text
-        
-        # And the rag method wires it all together:
-        def rag(self, query):
-            search_results = self.search(query)
-            prompt = self.build_prompt(query, search_results)
-            answer = self.llm(prompt)
-            return answer
+    def llm(self, prompt):
+        input_messages = [
+            {"role": "developer", "content": self.instructions},
+            {"role": "user", "content": prompt}
+        ]
+
+        response = self.llm_client.responses.create(
+            model=self.model,
+            input=input_messages
+        )
+
+        return response.output_text
+
+    def rag(self, query):
+        search_results = self.search(query)
+        prompt = self.build_prompt(query, search_results)
+        answer = self.llm(prompt)
+        return answer
