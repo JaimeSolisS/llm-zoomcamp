@@ -184,6 +184,23 @@ this request?
 - 70000
 - 700000
 
+```python
+from rag_helper import RAGBase
+from openai import OpenAI
+from dotenv import load_dotenv
+
+load_dotenv()
+openai_client = OpenAI()
+
+assistant = RAGBase(index=index, llm_client=openai_client)
+answer = assistant.rag("How does the agentic loop keep calling the model until it stops?")
+answer
+('The loop keeps calling the model by checking whether the model returned any `function_call` items.\n\n- It sends the current `messages` to the model.\n- If the response includes a `function_call`, the code runs the tool, appends the tool output to `messages`, and sets `has_function_calls = True`.\n- After processing the response, the loop checks:\n  - if `has_function_calls == False`, it `break`s\n  - otherwise it continues and calls the model again\n\nSo the stopping condition is: **no function calls in the current response**.',
+ 7121)
+```
+
+**Answer: 7000**
+
 We count input tokens instead of price because the cost depends on the model
 and provider you use, but the size of the prompt we send is the same for
 everyone.
@@ -231,6 +248,16 @@ How many chunks do you get?
 - 1100
 - 4500
 
+```python
+from gitsource import chunk_documents
+
+chunks = chunk_documents(documents, size=2000, step=1000)
+len(chunks)
+295
+```
+
+**Answer: 295**
+
 ## Q5. RAG with chunking
 
 Chunking makes each request smaller, because we send a smaller context to the
@@ -247,6 +274,26 @@ version send?
 - 3× fewer
 - 10× fewer
 - 30× fewer
+
+```python
+index = Index(
+    text_fields=["content"],
+    keyword_fields=["filename"]
+)
+
+index.fit(chunks)
+
+assistant = RAGBase(
+    index=index,
+    llm_client=openai_client,
+)
+
+answer = assistant.rag("How does the agentic loop keep calling the model until it stops?")
+answer[0]
+2304
+```
+
+**Answer: 3x fewer**
 
 ## Q6. Turning it into an agent
 
@@ -290,57 +337,54 @@ How many times did the agent call `search`?
 - 10
 - 20
 
-## Learning in Public
+```python
+from toyaikit.llm import OpenAIClient
+from toyaikit.tools import Tools
+from toyaikit.chat import IPythonChatInterface
+from toyaikit.chat.runners import OpenAIResponsesRunner, DisplayingRunnerCallback
 
-We encourage everyone to share what they learned. This is called "learning in public".
+def search(query: str) -> dict[str, str]:
+        """
+        Search the Lessons database for entries matching the given query
+        """
+        return index.search(
+            query,
+            num_results=5,
+            boost_dict={"content": 3.0}
+        )
 
-### Why learn in public?
+agent_tools = Tools()
+agent_tools.add_tool(search)
 
-- Accountability: Sharing your progress creates commitment and motivation to continue
-- Feedback: The community can provide valuable suggestions and corrections
-- Networking: You'll connect with like-minded people and potential collaborators
-- Documentation: Your posts become a learning journal you can reference later
-- Opportunities: Employers and clients often discover talent through public learning
+instructions = "You're a course teaching assistant. Answer the student's question using the search tool. Make multiple searches with different keywords before answering."
 
-You can read more about the benefits [here](https://alexeyondata.substack.com/p/benefits-of-learning-in-public-and) and in the [course's learning in public guide](https://datatalks.club/docs/courses/zoomcamp-logistics/learning-in-public/).
+chat_interface = IPythonChatInterface()
+callback = DisplayingRunnerCallback(chat_interface)
 
-Don't worry about being perfect. Everyone starts somewhere, and people love following genuine learning journeys!
+runner = OpenAIResponsesRunner(
+    tools=agent_tools,
+    developer_prompt=instructions,
+    chat_interface=chat_interface,
+    llm_client=OpenAIClient(model="gpt-5.4-mini")
+)
 
-### Example post for LinkedIn
+result = runner.loop(
+    prompt="How does the agentic loop work, and how is it different from plain RAG?",
+    callback=callback,
+)
 
-Tag [@Alexey Grigorev](https://www.linkedin.com/in/agrigorev/) and [@DataTalksClub](https://www.linkedin.com/company/datatalks-club/) in your post - we'll like and comment to give your post more reach.
+-> Response received
+Function call: search({"query":"agentic loop RAG difference"})
+Function call: search({"query":"agentic loop lesson"})
+Function call: search({"query":"plain RAG vs agentic loop"})
+Function call: search({"query":"agentic workflow retrieve act reflect"})
+Response received
+Assistant:
+The agentic loop is the repeated cycle where the LLM can...
 
 ```
-🚀 Module 1 of LLM Zoomcamp by @DataTalksClub complete!
 
-Just finished Module 1 - Agentic RAG. Learned how to:
-
-✅ Build a RAG system from scratch in plain Python
-✅ Index and search documents with minsearch
-✅ Chunk long documents for better retrieval
-✅ Turn the RAG pipeline into an agent with function calling
-
-Here's my homework solution: <LINK>
-
-Following along with this amazing free course by @Alexey Grigorev - who else is learning to build with LLMs?
-
-You can sign up here: https://github.com/DataTalksClub/llm-zoomcamp/
-```
-
-### Example post for Twitter/X
-
-```
-🤖 Module 1 of LLM Zoomcamp done!
-
-- RAG from scratch in plain Python
-- Search with minsearch
-- Chunking
-- Agents & function calling
-
-My solution: <LINK>
-
-Free course by @Al_Grigor & @DataTalksClub: https://github.com/DataTalksClub/llm-zoomcamp/
-```
+**Answer: 4**
 
 ## Submit the results
 
