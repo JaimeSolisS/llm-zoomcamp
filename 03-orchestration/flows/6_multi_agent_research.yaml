@@ -65,7 +65,7 @@ tasks:
           type: io.kestra.plugin.ai.provider.GoogleGemini
         contentRetrievers:
           - type: io.kestra.plugin.ai.retriever.TavilyWebSearch
-            apiKey: "{{ secret('TAVILY_API_KEY') }}"
+            apiKey: "{{ kv('TAVILY_API_KEY') }}"
 
   - id: parse_results
     type: io.kestra.plugin.core.log.Log
@@ -99,5 +99,5 @@ pluginDefaults:
   - type: io.kestra.plugin.ai.provider.GoogleGemini
     values:
       modelName: gemini-2.5-flash
-      apiKey: "{{ secret('GEMINI_API_KEY') }}"
+      apiKey: "{{ kv('GEMINI_API_KEY') }}"
 
