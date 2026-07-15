@@ -39,6 +39,36 @@ def get_conversations(limit=10):
 
     return [row_to_record(row) for row in rows]
 
+@dataclass
+class Stats:
+    total: int
+    avg_response_time: float
+    total_cost: float
+    avg_tokens: float
+
+def get_stats():
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT
+                    COUNT(*),
+                    AVG(response_time),
+                    SUM(cost),
+                    AVG(total_tokens)
+                FROM conversations
+            """)
+            row = cur.fetchone()
+    finally:
+        conn.close()
+
+    return Stats(
+        total=row[0],
+        avg_response_time=row[1],
+        total_cost=row[2],
+        avg_tokens=row[3],
+    )
+
 if __name__ == "__main__":
     records = get_conversations()
     for record in records:
