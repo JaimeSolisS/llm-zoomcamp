@@ -1,6 +1,6 @@
-"""Deployment manifest — import the pipelines and notebooks you want to deploy and list them in __all__."""
+"""Agent logs workspace — load Claude Code agent logs from REST API into DuckDB"""
 
-# from pipeline import my_pipeline
-# from notebook import my_notebook
+from rest_api_pipeline import load_agent_logs
+import agent_logs_dashboard 
 
-__all__: list[str] = []
+__all__ = ["load_agent_logs", "agent_logs_dashboard"]
