@@ -2,3 +2,9 @@
 __pycache__
 models/
 data/
+.agents/
+.claude/
+.dlt/
+.claudeignore
+.mcp.json
+2026-07-17_claude_logs_analysis_plan.md
